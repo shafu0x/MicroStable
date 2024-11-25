@@ -101,6 +101,55 @@ contract MicroStableTest is Test {
         assertEq(bobAmountMinted, 100);
     }
 
+    function test_liquidateUser(uint256 amount) public {
+        amount = bound(amount, 100e18, calculateMaxMintablePerEthDeposited());
+
+        // bob deposits + mints stables
+        depositWeth(bob, ONE_WETH);
+        mintStablecoins(bob, amount);
+
+        // alice is the liquidator, give her stables to pay off bob's debt
+        vm.prank(address(manager));
+        stablecoin.mint(alice, amount);
+
+        // change bob's address2minted balance, thus making him liquidatable
+        vm.mockCall(address(manager), abi.encodeWithSelector(manager.address2minted.selector, bob), abi.encode(amount));
+        assertEq(manager.address2minted(bob), amount);
+
+        // alice liquidates bob
+        vm.startPrank(alice);
+        manager.liquidate(bob);
+        vm.stopPrank();
+
+        // alice should have no stables left
+        uint256 aliceRemainingStables = 0;
+        assertEq(stablecoin.balanceOf(alice), aliceRemainingStables);
+
+        // bob should have no collateral remaining
+        assertEq(manager.address2deposit(bob), 0);
+
+        // alice should have an extera 1 x WETH on top of her starting balance (1000e18)
+        assertEq(weth.balanceOf(alice), 1001e18);
+    }
+
+    function test_cannotLiquidateWhenFullyCollateralised(uint256 amount) public {
+        amount = bound(amount, 100e18, calculateMaxMintablePerEthDeposited());
+
+        // bob deposits + mints stables
+        depositWeth(bob, ONE_WETH);
+        mintStablecoins(bob, amount);
+
+        // alice is the liquidator, give her stables to pay off bob's debt
+        vm.prank(address(manager));
+        stablecoin.mint(alice, amount);
+
+        // alice liquidates bob - @note: should revert
+        vm.startPrank(alice);
+        vm.expectRevert();
+        manager.liquidate(bob);
+        vm.stopPrank();
+    }
+
     // === HELPER FUNCTIONS ===
     function depositWeth(address depositer, uint256 depositAmount) public {
         vm.startPrank(depositer);
