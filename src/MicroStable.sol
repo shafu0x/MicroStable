@@ -60,8 +60,8 @@ contract Manager {
     }
 
     function mint(uint256 amount) public {
-        address2minted[msg.sender] += amount;
         require(collatRatio(msg.sender) >= MIN_COLLAT_RATIO);
+        address2minted[msg.sender] += amount;
         shUSD.mint(msg.sender, amount);
     }
 
