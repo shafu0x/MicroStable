@@ -26,6 +26,10 @@ contract ShUSD is ERC20("Shafu USD", "shUSD", 18) {
     function burn(address from, uint256 amount) public onlyManager {
         _burn(from, amount);
     }
+
+    function transferManager(address newManager) public onlyManager {
+        manager = newManager;
+    }
 }
 
 contract Manager {
