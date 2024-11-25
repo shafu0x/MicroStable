@@ -36,13 +36,14 @@ contract MicroStableTest is Test {
         vm.deal(bob, 1000e18);
         vm.deal(alice, 1000e18);
 
+        // @todo: the following to be precomputed using vm.computeCreateAddress instead, but will work for now
+        address managerContractAddress = 0xF62849F9A0B5Bf2913b396098F7c7019b51A820a;
+
         // instantiate contracts
-        stablecoin = new ShUSD(bob);
+        stablecoin = new ShUSD(managerContractAddress);
         weth = new MockWETH();
         manager = new Manager(address(weth), address(stablecoin), address(oracle));
-
-        vm.prank(bob);
-        stablecoin.transferManager(address(manager));
+        console2.log(address(manager));
 
         // mint mock weth to bob & alice
         weth.mint(bob, 1000e18);
